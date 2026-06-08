@@ -10,47 +10,188 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// A solution being evaluated against a set of weighted criteria.
-model Solution {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  scores Score[]
-
-  @@map("solutions")
+enum Currency {
+  GBP
+  USD
+  EUR
 }
 
-/// A single dimension a solution is scored on (e.g. "Cost", "Scalability").
-model Criterion {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  description String?
-  /// Relative weight of this criterion, 0..1. Weights are normalized at scoring time.
-  weight      Float    @default(1)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  scores Score[]
-
-  @@map("criteria")
+enum FinancialCategory {
+  IMPLEMENTATION_CAPEX
+  IMPLEMENTATION_OPEX
+  ONGOING_CAPEX
+  ONGOING_OPEX
 }
 
-/// A score for a given solution on a given criterion (0..10).
-model Score {
-  id          String   @id @default(cuid())
-  value       Int
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+/// A project being evaluated through gating and scorecard runs.
+model Project {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
 
-  solutionId  String
-  solution    Solution  @relation(fields: [solutionId], references: [id], onDelete: Cascade)
-  criterionId String
-  criterion   Criterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+  gatingRuns        GatingRun[]
+  scorecardRuns     ScorecardRun[]
+  financialEntries  FinancialEntry[]
+  financialSettings ProjectFinancialSettings?
 
-  @@unique([solutionId, criterionId])
-  @@map("scores")
+  @@map("projects")
+}
+
+/// A reusable pass/fail gating question.
+model GateQuestion {
+  id        String   @id @default(cuid())
+  text      String
+  order     Int      @unique
+  createdAt DateTime @default(now())
+
+  answers GatingAnswer[]
+
+  @@map("gate_questions")
+}
+
+/// One execution of the gating questionnaire for a project.
+model GatingRun {
+  id        String   @id @default(cuid())
+  projectId String
+  createdAt DateTime @default(now())
+
+  project Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  answers GatingAnswer[]
+
+  @@map("gating_runs")
+}
+
+/// An answer to a single gate question within a gating run.
+model GatingAnswer {
+  id         String   @id @default(cuid())
+  runId      String
+  questionId String
+  value      Boolean
+  createdAt  DateTime @default(now())
+
+  run      GatingRun    @relation(fields: [runId], references: [id], onDelete: Cascade)
+  question GateQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, questionId])
+  @@map("gating_answers")
+}
+
+/// A reusable scorecard question, grouped into steps and weighted.
+model ScorecardQuestion {
+  id         String   @id @default(cuid())
+  text       String
+  stepNumber Int
+  order      Int
+  weight     Float    @default(1.0)
+  criteria   Json     @default("[]")
+  createdAt  DateTime @default(now())
+
+  scores ScorecardScore[]
+
+  @@unique([stepNumber, order])
+  @@map("scorecard_questions")
+}
+
+/// One execution of the scorecard for a project.
+model ScorecardRun {
+  id        String   @id @default(cuid())
+  projectId String
+  name      String?
+  createdAt DateTime @default(now())
+
+  project      Project                @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  scores       ScorecardScore[]
+  financialCosts FinancialCost[]
+  overview     ScorecardOverview?
+  stepComments ScorecardStepComment[]
+
+  @@map("scorecard_runs")
+}
+
+/// A 0-5 score for a single scorecard question within a run.
+model ScorecardScore {
+  id         String   @id @default(cuid())
+  runId      String
+  questionId String
+  value      Int
+  createdAt  DateTime @default(now())
+
+  run      ScorecardRun      @relation(fields: [runId], references: [id], onDelete: Cascade)
+  question ScorecardQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, questionId])
+  @@map("scorecard_scores")
+}
+
+/// Free-form pros/cons/summary attached to a scorecard run.
+model ScorecardOverview {
+  id        String   @id @default(cuid())
+  runId     String   @unique
+  pros      String?
+  cons      String?
+  summary   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  run ScorecardRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@map("scorecard_overviews")
+}
+
+/// A per-step comment within a scorecard run.
+model ScorecardStepComment {
+  id         String   @id @default(cuid())
+  runId      String
+  stepNumber Int
+  comment    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  run ScorecardRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, stepNumber])
+  @@map("scorecard_step_comments")
+}
+
+/// Per-project financial settings (e.g. reporting currency).
+model ProjectFinancialSettings {
+  id        String   @id @default(cuid())
+  projectId String   @unique
+  currency  Currency @default(GBP)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("project_financial_settings")
+}
+
+/// A line item of cost (e.g. "Licensing"), categorized for financial analysis.
+model FinancialEntry {
+  id        String            @id @default(cuid())
+  projectId String
+  name      String
+  category  FinancialCategory
+  order     Int
+  createdAt DateTime          @default(now())
+
+  project Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  costs   FinancialCost[]
+
+  @@map("financial_entries")
+}
+
+/// The cost amount for a financial entry under a specific scorecard run.
+model FinancialCost {
+  id             String   @id @default(cuid())
+  entryId        String
+  scorecardRunId String
+  amount         Decimal  @db.Decimal(15, 2)
+  createdAt      DateTime @default(now())
+
+  entry        FinancialEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  scorecardRun ScorecardRun   @relation(fields: [scorecardRunId], references: [id], onDelete: Cascade)
+
+  @@unique([entryId, scorecardRunId])
+  @@map("financial_costs")
 }

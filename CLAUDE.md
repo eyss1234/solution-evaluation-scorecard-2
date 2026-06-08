@@ -17,7 +17,7 @@ against weighted criteria.
 - `app/` — pages and API routes (route handlers under `app/api/`)
 - `components/` — reusable React UI (`Navbar`, `Footer`)
 - `domain/` — pure, dependency-free business logic (e.g. `scoring.ts`). Unit-tested in isolation.
-- `lib/` — shared utilities: Prisma singleton (`prisma.ts`), `cn` helper, Zod schemas
+- `lib/` — shared utilities: Prisma client singleton (`db.ts`), `cn` helper, Zod schemas
 - `contexts/` — React context providers (`ThemeContext`)
 - `prisma/` — `schema.prisma` and `seed.ts`
 
