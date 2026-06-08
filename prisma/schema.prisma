@@ -1,0 +1,56 @@
+// Prisma schema for the Solution Evaluation Scorecard.
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// A solution being evaluated against a set of weighted criteria.
+model Solution {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  scores Score[]
+
+  @@map("solutions")
+}
+
+/// A single dimension a solution is scored on (e.g. "Cost", "Scalability").
+model Criterion {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  /// Relative weight of this criterion, 0..1. Weights are normalized at scoring time.
+  weight      Float    @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  scores Score[]
+
+  @@map("criteria")
+}
+
+/// A score for a given solution on a given criterion (0..10).
+model Score {
+  id          String   @id @default(cuid())
+  value       Int
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  solutionId  String
+  solution    Solution  @relation(fields: [solutionId], references: [id], onDelete: Cascade)
+  criterionId String
+  criterion   Criterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+
+  @@unique([solutionId, criterionId])
+  @@map("scores")
+}
