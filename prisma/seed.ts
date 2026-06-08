@@ -2,56 +2,75 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-async function main() {
-  const criteriaData = [
-    { name: "Cost", description: "Total cost of ownership", weight: 0.3 },
-    { name: "Scalability", description: "Ability to grow with demand", weight: 0.25 },
-    { name: "Ease of Use", description: "Developer and end-user experience", weight: 0.25 },
-    { name: "Security", description: "Risk posture and compliance", weight: 0.2 },
-  ];
+const gateQuestions = [
+  { order: 1, text: "Is the project aligned with strategic objectives?" },
+  { order: 2, text: "Is there a named executive sponsor?" },
+  { order: 3, text: "Is the required budget approved?" },
+  { order: 4, text: "Are the key risks understood and acceptable?" },
+];
 
-  const criteria = await Promise.all(
-    criteriaData.map((c) =>
-      prisma.criterion.upsert({
-        where: { name: c.name },
-        update: { description: c.description, weight: c.weight },
-        create: c,
+const scorecardQuestions = [
+  {
+    stepNumber: 1,
+    order: 1,
+    text: "Degree of alignment with business strategy",
+    weight: 1.5,
+    criteria: ["No alignment", "Weak", "Partial", "Good", "Strong", "Fully aligned"],
+  },
+  {
+    stepNumber: 1,
+    order: 2,
+    text: "Expected impact on customers",
+    weight: 1.0,
+    criteria: ["None", "Minimal", "Low", "Moderate", "High", "Transformational"],
+  },
+  {
+    stepNumber: 2,
+    order: 1,
+    text: "Technical feasibility",
+    weight: 1.0,
+    criteria: ["Infeasible", "Very hard", "Hard", "Feasible", "Straightforward", "Trivial"],
+  },
+  {
+    stepNumber: 2,
+    order: 2,
+    text: "Team capability and capacity",
+    weight: 1.0,
+    criteria: ["None", "Limited", "Some", "Adequate", "Strong", "Expert"],
+  },
+];
+
+async function main() {
+  await Promise.all(
+    gateQuestions.map((q) =>
+      prisma.gateQuestion.upsert({
+        where: { order: q.order },
+        update: { text: q.text },
+        create: q,
       }),
     ),
   );
 
-  const solutionsData = [
-    {
-      name: "Managed Cloud Platform",
-      description: "Fully managed PaaS offering",
-      scores: [8, 9, 7, 8],
+  await Promise.all(
+    scorecardQuestions.map((q) =>
+      prisma.scorecardQuestion.upsert({
+        where: { stepNumber_order: { stepNumber: q.stepNumber, order: q.order } },
+        update: { text: q.text, weight: q.weight, criteria: q.criteria },
+        create: q,
+      }),
+    ),
+  );
+
+  const project = await prisma.project.create({
+    data: {
+      name: "Sample Project",
+      financialSettings: { create: { currency: "GBP" } },
     },
-    {
-      name: "Self-Hosted Cluster",
-      description: "In-house Kubernetes deployment",
-      scores: [6, 8, 4, 9],
-    },
-  ];
+  });
 
-  for (const sol of solutionsData) {
-    const solution = await prisma.solution.create({
-      data: { name: sol.name, description: sol.description },
-    });
-
-    await Promise.all(
-      criteria.map((criterion, i) =>
-        prisma.score.create({
-          data: {
-            solutionId: solution.id,
-            criterionId: criterion.id,
-            value: sol.scores[i] ?? 0,
-          },
-        }),
-      ),
-    );
-  }
-
-  console.log("Seeded", criteria.length, "criteria and", solutionsData.length, "solutions.");
+  console.log(
+    `Seeded ${gateQuestions.length} gate questions, ${scorecardQuestions.length} scorecard questions, and project "${project.name}".`,
+  );
 }
 
 main()
