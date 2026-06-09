@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { apiOk, apiError } from "@/lib/api";
 import { scorecardSaveSchema } from "@/lib/validation";
@@ -43,6 +44,12 @@ export async function POST(request: Request, { params }: RouteContext) {
 
     return apiOk(updated);
   } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2003"
+    ) {
+      return apiError("Unknown question reference", 400);
+    }
     console.error("POST /api/scorecard/[runId]/submit failed:", error);
     return apiError("Failed to submit scorecard run", 500);
   }

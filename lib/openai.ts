@@ -53,10 +53,10 @@ export async function generateChatCompletion({
   });
 
   if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    throw new Error(
-      `OpenAI request failed (${response.status}): ${detail.slice(0, 500)}`,
-    );
+    // Drain the body so the connection can be reused, but keep it out of the
+    // thrown message — it can contain account/quota detail we don't want in logs.
+    await response.text().catch(() => "");
+    throw new Error(`OpenAI request failed with status ${response.status}`);
   }
 
   const data = (await response.json()) as {
