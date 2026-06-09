@@ -56,6 +56,13 @@ export default async function ProjectDetailPage({ params }: PageProps) {
           },
         },
       },
+      financialSettings: { select: { currency: true } },
+      financialEntries: {
+        orderBy: { order: "asc" },
+        include: {
+          costs: { select: { scorecardRunId: true, amount: true } },
+        },
+      },
     },
   });
 
@@ -95,6 +102,20 @@ export default async function ProjectDetailPage({ params }: PageProps) {
         )
       : null;
 
+  // Financial comparison data: scorecard runs as columns, entries with their
+  // per-run cost amounts (Decimal → number for the client).
+  const financialRuns = runViews.map((r) => ({ id: r.id, name: r.name }));
+  const financialEntries = project.financialEntries.map((e) => ({
+    id: e.id,
+    name: e.name,
+    category: e.category,
+    order: e.order,
+    costs: Object.fromEntries(
+      e.costs.map((c) => [c.scorecardRunId, Number(c.amount)]),
+    ),
+  }));
+  const currency = project.financialSettings?.currency ?? "GBP";
+
   return (
     <div className="animate-fade-in space-y-8">
       <Link
@@ -124,7 +145,12 @@ export default async function ProjectDetailPage({ params }: PageProps) {
         <>
           <ScorecardsCard projectId={project.id} runs={runViews} />
           <ComparisonCard comparison={comparison} />
-          <FinancialComparison projectId={project.id} />
+          <FinancialComparison
+            projectId={project.id}
+            runs={financialRuns}
+            initialEntries={financialEntries}
+            initialCurrency={currency}
+          />
         </>
       )}
     </div>
