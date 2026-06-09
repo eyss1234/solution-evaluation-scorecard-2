@@ -32,6 +32,19 @@ export function Navbar() {
           ))}
         </ul>
       </nav>
+
+      <ul className="flex items-center justify-center gap-1 border-t border-surface-border px-4 py-2 sm:hidden">
+        {links.map((link) => (
+          <li key={link.href}>
+            <Link
+              href={link.href}
+              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-surface-subtle hover:text-slate-900"
+            >
+              {link.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
     </header>
   );
 }
