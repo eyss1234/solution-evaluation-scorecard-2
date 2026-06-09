@@ -4,17 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { STEPS, TOTAL_STEPS } from "@/lib/steps";
+import { SCORE_LABELS } from "@/lib/score-labels";
 import { useScorecard } from "@/contexts/ScorecardContext";
-
-/** Score labels for values 0–5. */
-const SCORE_LABELS = [
-  "N/A",
-  "Very Poor",
-  "Poor",
-  "Adequate",
-  "Good",
-  "Excellent",
-] as const;
 
 interface ScorecardStepFormProps {
   stepNumber: number;
