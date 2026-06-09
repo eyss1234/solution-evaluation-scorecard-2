@@ -1009,6 +1009,175 @@ const scorecardQuestions = [
 // Seed
 // ---------------------------------------------------------------------------
 
+/**
+ * Seed a handful of projects covering every gating/scorecard outcome so the UI
+ * has realistic data to render. Relies on the gate and scorecard questions
+ * already being seeded (their ids are read back here).
+ */
+async function seedDemoProjects() {
+  const gateQs = await prisma.gateQuestion.findMany({ orderBy: { order: "asc" } });
+  const scQs = await prisma.scorecardQuestion.findMany({
+    orderBy: [{ stepNumber: "asc" }, { order: "asc" }],
+  });
+
+  const allYes = gateQs.map((q) => ({ questionId: q.id, value: true }));
+  const allNo = gateQs.map((q) => ({ questionId: q.id, value: false }));
+  const mixed = gateQs.map((q, i) => ({ questionId: q.id, value: i % 3 === 0 }));
+  const scoresFor = (valueFor: (stepNumber: number, index: number) => number) =>
+    scQs.map((q, i) => ({ questionId: q.id, value: valueFor(q.stepNumber, i) }));
+
+  // 1. Gate passed → two completed scorecards with a full financial comparison.
+  const acme = await prisma.project.create({
+    data: {
+      name: "Acme CRM Replacement",
+      gatingRuns: { create: { answers: { create: mixed } } },
+      financialSettings: { create: { currency: "GBP" } },
+    },
+  });
+  const salesforce = await prisma.scorecardRun.create({
+    data: {
+      projectId: acme.id,
+      name: "Salesforce",
+      submittedAt: new Date(),
+      scores: { create: scoresFor((_step, i) => (i % 5 === 0 ? 4 : 5)) },
+      overview: {
+        create: {
+          pros: "Best-in-class ecosystem and integrations.",
+          cons: "Premium pricing.",
+          summary:
+            "Strongest overall fit; recommended subject to budget sign-off.",
+        },
+      },
+    },
+  });
+  const dynamics = await prisma.scorecardRun.create({
+    data: {
+      projectId: acme.id,
+      name: "Dynamics 365",
+      submittedAt: new Date(),
+      scores: { create: scoresFor((step) => (step <= 3 ? 3 : 2)) },
+      overview: {
+        create: {
+          pros: "Tight Microsoft 365 integration.",
+          cons: "Weaker reporting; adoption risk.",
+        },
+      },
+    },
+  });
+  const [licensing, implementation, training, support] = await Promise.all([
+    prisma.financialEntry.create({
+      data: { projectId: acme.id, name: "Licensing (3yr)", category: "IMPLEMENTATION_CAPEX", order: 1 },
+    }),
+    prisma.financialEntry.create({
+      data: { projectId: acme.id, name: "Implementation services", category: "IMPLEMENTATION_CAPEX", order: 2 },
+    }),
+    prisma.financialEntry.create({
+      data: { projectId: acme.id, name: "Training", category: "IMPLEMENTATION_OPEX", order: 1 },
+    }),
+    prisma.financialEntry.create({
+      data: { projectId: acme.id, name: "Annual support", category: "ONGOING_OPEX", order: 1 },
+    }),
+  ]);
+  await prisma.financialCost.createMany({
+    data: [
+      { entryId: licensing.id, scorecardRunId: salesforce.id, amount: 180000 },
+      { entryId: licensing.id, scorecardRunId: dynamics.id, amount: 120000 },
+      { entryId: implementation.id, scorecardRunId: salesforce.id, amount: 95000 },
+      { entryId: implementation.id, scorecardRunId: dynamics.id, amount: 110000 },
+      { entryId: training.id, scorecardRunId: salesforce.id, amount: 15000 },
+      { entryId: training.id, scorecardRunId: dynamics.id, amount: 12000 },
+      { entryId: support.id, scorecardRunId: salesforce.id, amount: 42000 },
+      { entryId: support.id, scorecardRunId: dynamics.id, amount: 30000 },
+    ],
+  });
+
+  // 1b. Gate passed → five completed scorecards (wide comparison + financials).
+  const erp = await prisma.project.create({
+    data: {
+      name: "Enterprise ERP Selection",
+      gatingRuns: { create: { answers: { create: allYes } } },
+      financialSettings: { create: { currency: "GBP" } },
+    },
+  });
+  const erpVendors = [
+    { name: "SAP S/4HANA", base: 5 },
+    { name: "Oracle Fusion", base: 4 },
+    { name: "Workday", base: 5 },
+    { name: "NetSuite", base: 3 },
+    { name: "Odoo", base: 3 },
+  ];
+  const erpRuns = await Promise.all(
+    erpVendors.map((vendor) =>
+      prisma.scorecardRun.create({
+        data: {
+          projectId: erp.id,
+          name: vendor.name,
+          submittedAt: new Date(),
+          scores: {
+            create: scoresFor((step) =>
+              Math.max(0, Math.min(5, vendor.base - (step % 2))),
+            ),
+          },
+        },
+      }),
+    ),
+  );
+  const erpEntries = await Promise.all([
+    prisma.financialEntry.create({
+      data: { projectId: erp.id, name: "Licensing", category: "IMPLEMENTATION_CAPEX", order: 1 },
+    }),
+    prisma.financialEntry.create({
+      data: { projectId: erp.id, name: "System integrator", category: "IMPLEMENTATION_CAPEX", order: 2 },
+    }),
+    prisma.financialEntry.create({
+      data: { projectId: erp.id, name: "Data migration", category: "IMPLEMENTATION_OPEX", order: 1 },
+    }),
+    prisma.financialEntry.create({
+      data: { projectId: erp.id, name: "Annual subscription", category: "ONGOING_OPEX", order: 1 },
+    }),
+  ]);
+  const erpBaseCost = [220000, 150000, 60000, 90000];
+  await prisma.financialCost.createMany({
+    data: erpEntries.flatMap((entry, entryIndex) =>
+      erpRuns.map((run, runIndex) => ({
+        entryId: entry.id,
+        scorecardRunId: run.id,
+        amount: Math.round(erpBaseCost[entryIndex] * (1 + runIndex * 0.1)),
+      })),
+    ),
+  });
+
+  // 2. Gate passed → one in-progress scorecard (only the first two steps scored).
+  const cloud = await prisma.project.create({
+    data: {
+      name: "Cloud Data Platform",
+      gatingRuns: { create: { answers: { create: allYes } } },
+    },
+  });
+  await prisma.scorecardRun.create({
+    data: {
+      projectId: cloud.id,
+      name: "Snowflake",
+      scores: {
+        create: scQs
+          .filter((q) => q.stepNumber <= 2)
+          .map((q) => ({ questionId: q.id, value: 4 })),
+      },
+    },
+  });
+
+  // 3. Gate failed (every answer "no").
+  await prisma.project.create({
+    data: {
+      name: "Team Chat Tool",
+      gatingRuns: { create: { answers: { create: allNo } } },
+    },
+  });
+
+  // 4. Not started (no gating run yet).
+  await prisma.project.create({ data: { name: "Office Printer Fleet" } });
+}
+
 async function main() {
   console.log("Clearing existing seed data…");
 
@@ -1024,15 +1193,19 @@ async function main() {
   console.log("Seeding scorecard questions…");
   await prisma.scorecardQuestion.createMany({ data: scorecardQuestions });
 
-  const project = await prisma.project.create({
+  await prisma.project.create({
     data: {
       name: "Sample Project",
       financialSettings: { create: { currency: "GBP" } },
     },
   });
 
+  console.log("Seeding demo projects…");
+  await seedDemoProjects();
+
+  const projectCount = await prisma.project.count();
   console.log(
-    `Done. Seeded ${gateQuestions.length} gate questions, ${scorecardQuestions.length} scorecard questions, and sample project "${project.name}".`,
+    `Done. Seeded ${gateQuestions.length} gate questions, ${scorecardQuestions.length} scorecard questions, and ${projectCount} projects.`,
   );
 }
 
