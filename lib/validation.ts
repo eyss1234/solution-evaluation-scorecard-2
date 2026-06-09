@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Currency, FinancialCategory } from "@prisma/client";
 import {
   MAX_SCORE,
   MIN_SCORE,
@@ -110,3 +111,33 @@ export const generateOverviewSchema = z.object({
   type: z.enum(["pros", "cons", "summary"]),
 });
 export type GenerateOverviewInput = z.infer<typeof generateOverviewSchema>;
+
+/** Create a financial entry. `order` is assigned server-side, not by the client. */
+export const financialEntryInputSchema = z.object({
+  name: z.string().min(1, "Name is required").max(120),
+  category: z.nativeEnum(FinancialCategory),
+});
+export type FinancialEntryInput = z.infer<typeof financialEntryInputSchema>;
+
+/** Update a financial entry — currently only the name is editable. */
+export const financialEntryUpdateSchema = financialEntryInputSchema.pick({
+  name: true,
+});
+export type FinancialEntryUpdate = z.infer<typeof financialEntryUpdateSchema>;
+
+/**
+ * Upsert a cost amount for an entry under a specific scorecard run. The upper
+ * bound matches the `Decimal(15, 2)` column, so oversized amounts are rejected
+ * with a 400 here rather than triggering a numeric overflow (500) at the DB.
+ */
+export const financialCostInputSchema = z.object({
+  scorecardRunId: z.string().min(1),
+  amount: z.number().finite().min(0).max(9_999_999_999_999.99, "Amount is too large"),
+});
+export type FinancialCostInput = z.infer<typeof financialCostInputSchema>;
+
+/** Update a project's reporting currency. */
+export const currencyUpdateSchema = z.object({
+  currency: z.nativeEnum(Currency),
+});
+export type CurrencyUpdate = z.infer<typeof currencyUpdateSchema>;
