@@ -17,7 +17,7 @@ export function GatingCard({ projectId, status, answeredYes }: GatingCardProps) 
             <p className="text-sm text-slate-500">Not Started</p>
           </div>
         </div>
-        <Link href={`/project/${projectId}/gate`} className="btn-primary">
+        <Link href={`/project/${projectId}/gate`} className="btn-primary print:hidden">
           Start Gating Evaluation
         </Link>
       </section>

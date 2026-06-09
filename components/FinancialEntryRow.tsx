@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   type Currency,
+  formatCurrency,
   getCurrencySymbol,
   parseCurrencyInput,
 } from "@/domain/financial/format";
@@ -28,7 +29,6 @@ export function FinancialEntryRow({
 }: FinancialEntryRowProps) {
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const symbol = getCurrencySymbol(currency);
 
   return (
     <tr className="border-b border-surface-border/60">
@@ -37,7 +37,7 @@ export function FinancialEntryRow({
       {runs.map((run) => (
         <td key={run.id} className="px-3 py-1.5">
           <CostCell
-            symbol={symbol}
+            currency={currency}
             amount={entry.costs[run.id] ?? 0}
             hasError={costErrors.has(`${entry.id}:${run.id}`)}
             onSave={(amount) => onSaveCost(entry.id, run.id, amount)}
@@ -94,16 +94,17 @@ export function FinancialEntryRow({
 }
 
 function CostCell({
-  symbol,
+  currency,
   amount,
   hasError,
   onSave,
 }: {
-  symbol: string;
+  currency: Currency;
   amount: number;
   hasError?: boolean;
   onSave: (amount: number) => Promise<void>;
 }) {
+  const symbol = getCurrencySymbol(currency);
   const [value, setValue] = useState(amount ? String(amount) : "");
   const [saving, setSaving] = useState(false);
 
@@ -124,26 +125,33 @@ function CostCell({
   }
 
   return (
-    <div className="flex items-center justify-end gap-1">
-      <span className="text-xs text-slate-400">{symbol}</span>
-      <input
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-        }}
-        inputMode="decimal"
-        disabled={saving}
-        aria-label="Cost amount"
-        aria-invalid={hasError || undefined}
-        title={hasError ? "Failed to save — edit to retry" : undefined}
-        className={`w-24 rounded-md border bg-surface px-2 py-1 text-right text-sm text-slate-900 focus:outline-none focus:ring-2 disabled:opacity-60 ${
-          hasError
-            ? "border-red-400 focus:border-red-500 focus:ring-red-400/30"
-            : "border-surface-border focus:border-brand-500 focus:ring-brand-500/30"
-        }`}
-      />
-    </div>
+    <>
+      {/* Editable on screen */}
+      <div className="flex items-center justify-end gap-1 print:hidden">
+        <span className="text-xs text-slate-400">{symbol}</span>
+        <input
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+          }}
+          inputMode="decimal"
+          disabled={saving}
+          aria-label="Cost amount"
+          aria-invalid={hasError || undefined}
+          title={hasError ? "Failed to save — edit to retry" : undefined}
+          className={`w-full min-w-0 rounded-md border bg-surface px-2 py-1 text-right text-sm text-slate-900 focus:outline-none focus:ring-2 disabled:opacity-60 ${
+            hasError
+              ? "border-red-400 focus:border-red-500 focus:ring-red-400/30"
+              : "border-surface-border focus:border-brand-500 focus:ring-brand-500/30"
+          }`}
+        />
+      </div>
+      {/* Formatted, read-only in print */}
+      <span className="hidden text-right text-slate-700 print:block">
+        {amount ? formatCurrency(amount, currency) : "—"}
+      </span>
+    </>
   );
 }

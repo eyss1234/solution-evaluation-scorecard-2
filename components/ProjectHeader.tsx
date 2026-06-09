@@ -32,7 +32,7 @@ export function ProjectHeader({ projectId, initialName }: ProjectHeaderProps) {
           setEditing(false);
         }}
       />
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 print:hidden">
         <ExportProjectPdfButton />
         <ProjectActionsMenu
           projectId={projectId}
