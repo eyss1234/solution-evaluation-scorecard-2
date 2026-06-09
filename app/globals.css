@@ -34,3 +34,52 @@
     @apply w-full rounded-lg border border-surface-border bg-surface px-3.5 py-2 text-sm text-slate-900 transition-colors placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30 disabled:cursor-not-allowed disabled:bg-surface-subtle;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * Print / Export to PDF
+ *
+ * Turns the live app into a clean, presentable document: drops interactive
+ * chrome (buttons, selects, menus), renders editable cells as plain text, and
+ * expands scroll areas so nothing is clipped like a screenshot.
+ * ------------------------------------------------------------------------- */
+@media print {
+  @page {
+    margin: 16mm;
+  }
+
+  /* Keep brand/status colours in the printed output. */
+  body {
+    background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Interactive controls are not part of the document. */
+  button,
+  select {
+    display: none !important;
+  }
+
+  /* Render editable inputs (e.g. cost cells) as plain text. */
+  input,
+  textarea {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    resize: none;
+  }
+
+  /* Never clip or scroll — show the full tables. */
+  .overflow-x-auto,
+  .overflow-y-auto,
+  .overflow-auto {
+    overflow: visible !important;
+  }
+
+  /* Flatten cards into clean document sections that don't split across pages. */
+  .card {
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+}

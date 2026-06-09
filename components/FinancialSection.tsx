@@ -68,7 +68,7 @@ export function FinancialSection({
         />
       ))}
 
-      <tr>
+      <tr className="print:hidden">
         <td colSpan={colCount} className="py-2 pr-3">
           <div className="flex items-center gap-2">
             <input
