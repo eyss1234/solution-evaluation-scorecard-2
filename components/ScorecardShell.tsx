@@ -36,6 +36,7 @@ export function ScorecardShell({
   return (
     <ScorecardProvider
       runId={runId}
+      projectId={projectId}
       questions={questions}
       initialScores={initialScores}
       initialStepComments={initialStepComments}

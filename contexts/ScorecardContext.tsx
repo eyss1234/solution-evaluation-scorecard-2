@@ -40,6 +40,7 @@ export interface OverviewData {
 
 interface ScorecardContextValue {
   runId: string;
+  projectId: string;
   questions: ScorecardQuestionData[];
   scores: Record<string, number>;
   stepComments: Record<number, string>;
@@ -61,6 +62,7 @@ const SECTION_WEIGHT_BY_STEP = new Map(STEPS.map((s) => [s.number, s.sectionWeig
 
 interface ScorecardProviderProps {
   runId: string;
+  projectId: string;
   questions: ScorecardQuestionData[];
   initialScores?: Record<string, number>;
   initialStepComments?: Record<number, string>;
@@ -70,6 +72,7 @@ interface ScorecardProviderProps {
 
 export function ScorecardProvider({
   runId,
+  projectId,
   questions,
   initialScores,
   initialStepComments,
@@ -157,6 +160,7 @@ export function ScorecardProvider({
   const value = useMemo<ScorecardContextValue>(
     () => ({
       runId,
+      projectId,
       questions,
       scores,
       stepComments,
@@ -171,6 +175,7 @@ export function ScorecardProvider({
     }),
     [
       runId,
+      projectId,
       questions,
       scores,
       stepComments,
