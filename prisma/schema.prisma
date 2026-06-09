@@ -94,10 +94,12 @@ model ScorecardQuestion {
 
 /// One execution of the scorecard for a project.
 model ScorecardRun {
-  id        String   @id @default(cuid())
-  projectId String
-  name      String?
-  createdAt DateTime @default(now())
+  id          String    @id @default(cuid())
+  projectId   String
+  name        String?
+  createdAt   DateTime  @default(now())
+  /// Set when the run is submitted; null while it is still a draft.
+  submittedAt DateTime?
 
   project      Project                @relation(fields: [projectId], references: [id], onDelete: Cascade)
   scores       ScorecardScore[]

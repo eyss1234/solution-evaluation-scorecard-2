@@ -67,3 +67,46 @@ export const scorecardScoreInputSchema = z.object({
   value: z.number().int().min(MIN_SCORECARD_SCORE).max(MAX_SCORECARD_SCORE),
 });
 export type ScorecardScoreInput = z.infer<typeof scorecardScoreInputSchema>;
+
+/** Body for creating a scorecard run. Name is optional and auto-generated. */
+export const scorecardRunInputSchema = z.object({
+  projectId: z.string().min(1),
+  name: z.string().min(1).max(120).optional(),
+});
+export type ScorecardRunInput = z.infer<typeof scorecardRunInputSchema>;
+
+/** A single score within a save/submit payload (run id comes from the path). */
+export const scorecardSaveScoreSchema = z.object({
+  questionId: z.string().min(1),
+  value: z.number().int().min(MIN_SCORECARD_SCORE).max(MAX_SCORECARD_SCORE),
+});
+
+/**
+ * Save/submit payload: a batch of scores plus an optional step comment. When a
+ * `stepComment` is supplied a `stepNumber` is required to anchor it.
+ */
+export const scorecardSaveSchema = z
+  .object({
+    scores: z.array(scorecardSaveScoreSchema).default([]),
+    stepComment: z.string().max(5000).optional(),
+    stepNumber: z.number().int().min(1).optional(),
+  })
+  .refine((d) => d.stepComment === undefined || d.stepNumber !== undefined, {
+    message: "stepNumber is required when stepComment is provided",
+    path: ["stepNumber"],
+  });
+export type ScorecardSaveInput = z.infer<typeof scorecardSaveSchema>;
+
+/** Overview free-text fields; all optional so individual fields can be saved. */
+export const scorecardOverviewSchema = z.object({
+  pros: z.string().max(10000).optional().nullable(),
+  cons: z.string().max(10000).optional().nullable(),
+  summary: z.string().max(10000).optional().nullable(),
+});
+export type ScorecardOverviewInput = z.infer<typeof scorecardOverviewSchema>;
+
+/** Which overview section the AI should generate. */
+export const generateOverviewSchema = z.object({
+  type: z.enum(["pros", "cons", "summary"]),
+});
+export type GenerateOverviewInput = z.infer<typeof generateOverviewSchema>;
