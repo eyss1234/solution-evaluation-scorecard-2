@@ -31,6 +31,11 @@ describe("formatCurrency", () => {
   it("falls back to zero for non-finite input", () => {
     expect(formatCurrency(Number.NaN, "GBP")).toBe("£0.00");
   });
+
+  it("defaults to GBP when no currency is given", () => {
+    expect(formatCurrency(1234.5)).toBe("£1,234.50");
+    expect(getCurrencySymbol()).toBe("£");
+  });
 });
 
 describe("parseCurrencyInput", () => {

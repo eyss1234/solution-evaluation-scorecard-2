@@ -8,14 +8,17 @@
 /** Supported reporting currencies. */
 export type Currency = "GBP" | "USD" | "EUR";
 
+/** The default reporting currency, used when none is specified. */
+export const DEFAULT_CURRENCY: Currency = "GBP";
+
 const CURRENCY_SYMBOLS: Record<Currency, string> = {
   GBP: "£",
   USD: "$",
   EUR: "€",
 };
 
-/** Return the symbol for a currency (e.g. "GBP" -> "£"). */
-export function getCurrencySymbol(currency: Currency): string {
+/** Return the symbol for a currency (e.g. "GBP" -> "£"). Defaults to GBP. */
+export function getCurrencySymbol(currency: Currency = DEFAULT_CURRENCY): string {
   return CURRENCY_SYMBOLS[currency];
 }
 
@@ -24,7 +27,10 @@ export function getCurrencySymbol(currency: Currency): string {
  * decimal places, e.g. `formatCurrency(1234.5, "GBP")` -> `"£1,234.50"`.
  * Negative amounts place the minus sign before the symbol: `"-£1,234.50"`.
  */
-export function formatCurrency(amount: number, currency: Currency): string {
+export function formatCurrency(
+  amount: number,
+  currency: Currency = DEFAULT_CURRENCY,
+): string {
   const symbol = getCurrencySymbol(currency);
   const safe = Number.isFinite(amount) ? amount : 0;
   const negative = safe < 0;
