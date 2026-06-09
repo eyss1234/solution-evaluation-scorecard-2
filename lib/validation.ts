@@ -17,6 +17,20 @@ export type ProjectInput = z.infer<typeof projectInputSchema>;
 export const projectUpdateSchema = projectInputSchema;
 export type ProjectUpdate = z.infer<typeof projectUpdateSchema>;
 
+export const gatingAnswerInputSchema = z.object({
+  questionId: z.string().min(1),
+  value: z.boolean(),
+});
+export type GatingAnswerInput = z.infer<typeof gatingAnswerInputSchema>;
+
+export const gatingRunInputSchema = z.object({
+  projectId: z.string().min(1),
+  answers: z
+    .array(gatingAnswerInputSchema)
+    .min(1, "At least one answer is required"),
+});
+export type GatingRunInput = z.infer<typeof gatingRunInputSchema>;
+
 export const solutionInputSchema = z.object({
   name: z.string().min(1, "Name is required").max(120),
   description: z.string().max(2000).optional().nullable(),
