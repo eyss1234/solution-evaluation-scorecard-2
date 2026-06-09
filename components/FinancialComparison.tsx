@@ -43,6 +43,8 @@ export function FinancialComparison({
   const [currency, setCurrency] = useState<Currency>(initialCurrency);
   const [entries, setEntries] = useState<EntryData[]>(initialEntries);
   const [error, setError] = useState<string | null>(null);
+  // Per-cell cost-save failures, keyed "entryId:runId".
+  const [costErrors, setCostErrors] = useState<Set<string>>(new Set());
 
   async function addEntry(
     category: FinancialCategory,
@@ -96,8 +98,9 @@ export function FinancialComparison({
     runId: string,
     amount: number,
   ): Promise<void> {
-    setError(null);
+    const key = `${entryId}:${runId}`;
     const previous = entries.find((e) => e.id === entryId)?.costs[runId] ?? 0;
+    clearCostError(key);
     setEntries((prev) =>
       prev.map((e) =>
         e.id === entryId ? { ...e, costs: { ...e.costs, [runId]: amount } } : e,
@@ -115,6 +118,7 @@ export function FinancialComparison({
       const json = await res.json();
       if (!res.ok || !json.ok) throw new Error(json?.error?.message);
     } catch {
+      // Revert to the last-saved value and flag the specific cell.
       setEntries((prev) =>
         prev.map((e) =>
           e.id === entryId
@@ -122,8 +126,17 @@ export function FinancialComparison({
             : e,
         ),
       );
-      setError("Failed to save cost. Please try again.");
+      setCostErrors((prev) => new Set(prev).add(key));
     }
+  }
+
+  function clearCostError(key: string) {
+    setCostErrors((prev) => {
+      if (!prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
   }
 
   const grandTotal = (runId: string) =>
@@ -182,6 +195,7 @@ export function FinancialComparison({
                   .sort((a, b) => a.order - b.order)}
                 runs={runs}
                 currency={currency}
+                costErrors={costErrors}
                 onAddEntry={addEntry}
                 onDeleteEntry={deleteEntry}
                 onSaveCost={saveCost}

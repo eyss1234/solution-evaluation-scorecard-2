@@ -12,6 +12,7 @@ interface FinancialSectionProps {
   entries: EntryData[];
   runs: RunColumn[];
   currency: Currency;
+  costErrors: Set<string>;
   onAddEntry: (category: FinancialCategory, name: string) => Promise<boolean>;
   onDeleteEntry: (entryId: string) => Promise<void>;
   onSaveCost: (entryId: string, runId: string, amount: number) => Promise<void>;
@@ -23,6 +24,7 @@ export function FinancialSection({
   entries,
   runs,
   currency,
+  costErrors,
   onAddEntry,
   onDeleteEntry,
   onSaveCost,
@@ -60,6 +62,7 @@ export function FinancialSection({
           entry={entry}
           runs={runs}
           currency={currency}
+          costErrors={costErrors}
           onSaveCost={onSaveCost}
           onDelete={onDeleteEntry}
         />
