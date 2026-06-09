@@ -8,6 +8,15 @@ import {
 
 /** Zod schemas shared between API routes, forms, and server actions. */
 
+export const projectInputSchema = z.object({
+  name: z.string().min(1, "Name is required").max(120),
+});
+export type ProjectInput = z.infer<typeof projectInputSchema>;
+
+/** Update payload for a project — currently only the name is editable. */
+export const projectUpdateSchema = projectInputSchema;
+export type ProjectUpdate = z.infer<typeof projectUpdateSchema>;
+
 export const gatingAnswerInputSchema = z.object({
   questionId: z.string().min(1),
   value: z.boolean(),
