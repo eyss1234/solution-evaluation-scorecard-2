@@ -17,3 +17,13 @@ export function scorePercentColor(pct: number): string {
   if (pct >= 60) return "text-amber-600";
   return "text-red-600";
 }
+
+/**
+ * Tailwind badge classes (bg + text + ring) for a single 0–5 score:
+ * red ≤ 2, amber = 3, green ≥ 4.
+ */
+export function scoreValueBadgeClasses(value: number): string {
+  if (value <= 2) return "bg-red-50 text-red-700 ring-red-600/20";
+  if (value === 3) return "bg-amber-50 text-amber-700 ring-amber-600/20";
+  return "bg-emerald-50 text-emerald-700 ring-emerald-600/20";
+}
