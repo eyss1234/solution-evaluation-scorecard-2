@@ -9,6 +9,15 @@
 export const MIN_SCORE = 0;
 export const MAX_SCORE = 10;
 
+/**
+ * Bounds for the step-based scorecard questionnaire, which is scored on a
+ * discrete 0–5 scale (see the criteria descriptions seeded in `prisma/seed.ts`).
+ * This is a distinct scale from the [MIN_SCORE, MAX_SCORE] weighted-criteria
+ * system above — do not conflate the two.
+ */
+export const MIN_SCORECARD_SCORE = 0;
+export const MAX_SCORECARD_SCORE = 5;
+
 export interface WeightedCriterion {
   id: string;
   weight: number;
