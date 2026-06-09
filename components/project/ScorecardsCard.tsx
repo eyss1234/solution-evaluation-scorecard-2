@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { CreateScorecardButton } from "@/components/CreateScorecardButton";
-import { scorePercentColor } from "@/lib/score-labels";
+import { ScorecardItem } from "@/components/ScorecardItem";
 
 export interface ScorecardRunView {
   id: string;
@@ -39,39 +38,14 @@ export function ScorecardsCard({ projectId, runs }: ScorecardsCardProps) {
       ) : (
         <ul className="divide-y divide-surface-border">
           {runs.map((run) => (
-            <li key={run.id}>
-              <Link
-                href={
-                  run.completed
-                    ? `/scorecard/${run.id}`
-                    : `/scorecard/${run.id}/step/1`
-                }
-                className="group flex items-center justify-between gap-3 py-3"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-medium text-slate-900 transition-colors group-hover:text-brand-700">
-                    {run.name}
-                  </p>
-                  <p className="text-sm text-slate-500">
-                    {dateFormatter.format(run.createdAt)}
-                  </p>
-                </div>
-                {run.completed ? (
-                  <span className="flex shrink-0 items-center gap-2">
-                    <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
-                      Completed
-                    </span>
-                    <span className={`text-sm font-semibold ${scorePercentColor(run.total)}`}>
-                      {Math.round(run.total)}%
-                    </span>
-                  </span>
-                ) : (
-                  <span className="inline-flex shrink-0 items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
-                    In progress
-                  </span>
-                )}
-              </Link>
-            </li>
+            <ScorecardItem
+              key={run.id}
+              runId={run.id}
+              initialName={run.name}
+              completed={run.completed}
+              total={run.total}
+              dateLabel={dateFormatter.format(run.createdAt)}
+            />
           ))}
         </ul>
       )}

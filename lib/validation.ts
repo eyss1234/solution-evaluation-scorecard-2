@@ -76,6 +76,12 @@ export const scorecardRunInputSchema = z.object({
 });
 export type ScorecardRunInput = z.infer<typeof scorecardRunInputSchema>;
 
+/** Update a scorecard run — currently only the name is editable. */
+export const scorecardRunUpdateSchema = z.object({
+  name: z.string().min(1, "Name is required").max(120),
+});
+export type ScorecardRunUpdate = z.infer<typeof scorecardRunUpdateSchema>;
+
 /** A single score within a save/submit payload (run id comes from the path). */
 export const scorecardSaveScoreSchema = z.object({
   questionId: z.string().min(1),
