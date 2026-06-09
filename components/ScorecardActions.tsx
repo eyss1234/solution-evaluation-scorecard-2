@@ -4,18 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ConfirmModal } from "./ConfirmModal";
 
-interface ProjectActionsMenuProps {
-  projectId: string;
-  projectName: string;
+interface ScorecardActionsProps {
+  runId: string;
+  name: string;
   onRename: () => void;
 }
 
-/** 3-dot dropdown with Rename and Delete (Delete behind a confirmation modal). */
-export function ProjectActionsMenu({
-  projectId,
-  projectName,
-  onRename,
-}: ProjectActionsMenuProps) {
+/** Per-scorecard 3-dot menu: rename (delegated to inline edit) and delete. */
+export function ScorecardActions({ runId, name, onRename }: ScorecardActionsProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -45,15 +41,14 @@ export function ProjectActionsMenu({
     setDeleting(true);
     setError(null);
     try {
-      const res = await fetch(`/api/projects/${projectId}`, { method: "DELETE" });
+      const res = await fetch(`/api/scorecard/${runId}`, { method: "DELETE" });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json.ok) {
-        setError(json?.error?.message ?? "Failed to delete project.");
+        setError(json?.error?.message ?? "Failed to delete scorecard.");
         setDeleting(false);
         return;
       }
-      // Leave the (now-deleted) project page.
-      router.push("/");
+      setConfirmOpen(false);
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");
@@ -68,8 +63,8 @@ export function ProjectActionsMenu({
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="Project actions"
-        className="rounded-lg border border-surface-border bg-surface p-2 text-slate-500 transition-colors hover:bg-surface-subtle hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500"
+        aria-label="Scorecard actions"
+        className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-surface-subtle hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500"
       >
         <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5" aria-hidden="true">
           <circle cx="12" cy="5" r="1.6" />
@@ -81,7 +76,7 @@ export function ProjectActionsMenu({
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-20 mt-1 w-44 overflow-hidden rounded-lg border border-surface-border bg-surface py-1 shadow-card"
+          className="absolute right-0 z-20 mt-1 w-40 overflow-hidden rounded-lg border border-surface-border bg-surface py-1 shadow-card"
         >
           <button
             type="button"
@@ -111,16 +106,16 @@ export function ProjectActionsMenu({
 
       <ConfirmModal
         open={confirmOpen}
-        title="Delete project"
+        title="Delete scorecard"
         message={
           <>
             Are you sure you want to delete{" "}
-            <span className="font-medium text-slate-900">{projectName}</span>?
-            This permanently removes its gating runs, scorecards, and financial
-            data. This action cannot be undone.
+            <span className="font-medium text-slate-900">{name}</span>? This
+            permanently removes its scores, comments, and overview. This action
+            cannot be undone.
           </>
         }
-        confirmLabel="Delete project"
+        confirmLabel="Delete scorecard"
         destructive
         loading={deleting}
         error={error}
