@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { scorePercentColor } from "@/lib/score-labels";
+import { useToast } from "@/contexts/ToastContext";
 import { ScorecardActions } from "./ScorecardActions";
 
 interface ScorecardItemProps {
@@ -22,6 +23,7 @@ export function ScorecardItem({
   dateLabel,
 }: ScorecardItemProps) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [name, setName] = useState(initialName);
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(initialName);
@@ -69,6 +71,7 @@ export function ScorecardItem({
       }
       setName(trimmed);
       setEditing(false);
+      showToast("Scorecard renamed");
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");

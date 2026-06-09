@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/contexts/ToastContext";
 
 interface EditProjectNameProps {
   projectId: string;
@@ -25,6 +26,7 @@ export function EditProjectName({
   onSaved,
 }: EditProjectNameProps) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [value, setValue] = useState(name);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,6 +69,7 @@ export function EditProjectName({
         return;
       }
       onSaved(trimmed);
+      showToast("Project renamed");
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");

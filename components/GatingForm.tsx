@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/contexts/ToastContext";
 
 interface GateQuestion {
   id: string;
@@ -15,6 +16,7 @@ interface GatingFormProps {
 
 export function GatingForm({ projectId, questions }: GatingFormProps) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [answers, setAnswers] = useState<Record<string, boolean>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +55,7 @@ export function GatingForm({ projectId, questions }: GatingFormProps) {
         setError(json?.error?.message ?? "Failed to submit gating evaluation.");
         return;
       }
+      showToast("Gating evaluation submitted");
       router.push(`/project/${projectId}`);
       router.refresh();
     } catch {

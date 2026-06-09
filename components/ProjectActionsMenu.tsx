@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ConfirmModal } from "./ConfirmModal";
+import { useToast } from "@/contexts/ToastContext";
 
 interface ProjectActionsMenuProps {
   projectId: string;
@@ -17,6 +18,7 @@ export function ProjectActionsMenu({
   onRename,
 }: ProjectActionsMenuProps) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [open, setOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -53,6 +55,7 @@ export function ProjectActionsMenu({
         return;
       }
       // Leave the (now-deleted) project page.
+      showToast("Project deleted");
       router.push("/");
       router.refresh();
     } catch {
