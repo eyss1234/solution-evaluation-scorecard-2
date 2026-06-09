@@ -7,6 +7,7 @@ import {
   type ScorecardQuestionData,
 } from "@/contexts/ScorecardContext";
 import { ScorecardSidebar } from "@/components/ScorecardSidebar";
+import { ScorecardAutosave } from "@/components/ScorecardAutosave";
 
 interface ScorecardShellProps {
   runId: string;
@@ -42,6 +43,7 @@ export function ScorecardShell({
       initialStepComments={initialStepComments}
       initialOverview={initialOverview}
     >
+      <ScorecardAutosave />
       <div className="flex flex-col gap-4 lg:flex-row lg:gap-8">
         <ScorecardSidebar
           runId={runId}
