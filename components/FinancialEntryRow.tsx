@@ -12,6 +12,8 @@ interface FinancialEntryRowProps {
   entry: EntryData;
   runs: RunColumn[];
   currency: Currency;
+  /** Keys ("entryId:runId") whose last cost save failed. */
+  costErrors: Set<string>;
   onSaveCost: (entryId: string, runId: string, amount: number) => Promise<void>;
   onDelete: (entryId: string) => Promise<void>;
 }
@@ -20,6 +22,7 @@ export function FinancialEntryRow({
   entry,
   runs,
   currency,
+  costErrors,
   onSaveCost,
   onDelete,
 }: FinancialEntryRowProps) {
@@ -36,6 +39,7 @@ export function FinancialEntryRow({
           <CostCell
             symbol={symbol}
             amount={entry.costs[run.id] ?? 0}
+            hasError={costErrors.has(`${entry.id}:${run.id}`)}
             onSave={(amount) => onSaveCost(entry.id, run.id, amount)}
           />
         </td>
@@ -48,10 +52,9 @@ export function FinancialEntryRow({
               type="button"
               onClick={async () => {
                 setDeleting(true);
+                // On success the row unmounts; on failure the parent reverts
+                // and re-mounts a fresh row, so no post-await state reset here.
                 await onDelete(entry.id);
-                // Row likely unmounts on success; reset defensively otherwise.
-                setDeleting(false);
-                setConfirming(false);
               }}
               disabled={deleting}
               aria-label={`Confirm delete ${entry.name}`}
@@ -93,10 +96,12 @@ export function FinancialEntryRow({
 function CostCell({
   symbol,
   amount,
+  hasError,
   onSave,
 }: {
   symbol: string;
   amount: number;
+  hasError?: boolean;
   onSave: (amount: number) => Promise<void>;
 }) {
   const [value, setValue] = useState(amount ? String(amount) : "");
@@ -131,7 +136,13 @@ function CostCell({
         inputMode="decimal"
         disabled={saving}
         aria-label="Cost amount"
-        className="w-24 rounded-md border border-surface-border bg-surface px-2 py-1 text-right text-sm text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30 disabled:opacity-60"
+        aria-invalid={hasError || undefined}
+        title={hasError ? "Failed to save — edit to retry" : undefined}
+        className={`w-24 rounded-md border bg-surface px-2 py-1 text-right text-sm text-slate-900 focus:outline-none focus:ring-2 disabled:opacity-60 ${
+          hasError
+            ? "border-red-400 focus:border-red-500 focus:ring-red-400/30"
+            : "border-surface-border focus:border-brand-500 focus:ring-brand-500/30"
+        }`}
       />
     </div>
   );
