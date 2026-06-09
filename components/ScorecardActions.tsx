@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ConfirmModal } from "./ConfirmModal";
+import { useToast } from "@/contexts/ToastContext";
 
 interface ScorecardActionsProps {
   runId: string;
@@ -13,6 +14,7 @@ interface ScorecardActionsProps {
 /** Per-scorecard 3-dot menu: rename (delegated to inline edit) and delete. */
 export function ScorecardActions({ runId, name, onRename }: ScorecardActionsProps) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [open, setOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -49,6 +51,7 @@ export function ScorecardActions({ runId, name, onRename }: ScorecardActionsProp
         return;
       }
       setConfirmOpen(false);
+      showToast("Scorecard deleted");
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");

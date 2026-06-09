@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 
 interface ConfirmModalProps {
   open: boolean;
@@ -31,9 +31,12 @@ export function ConfirmModal({
   onCancel,
 }: ConfirmModalProps) {
   const titleId = useId();
+  const cancelRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
+    // Move focus into the dialog so keyboard users start on a safe action.
+    cancelRef.current?.focus();
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape" && !loading) onCancel();
     }
@@ -65,6 +68,7 @@ export function ConfirmModal({
         )}
         <div className="mt-6 flex justify-end gap-2">
           <button
+            ref={cancelRef}
             type="button"
             onClick={onCancel}
             disabled={loading}

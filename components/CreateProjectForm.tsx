@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/contexts/ToastContext";
 
 /**
  * Client form for creating a project. Posts to the projects API, then refreshes
@@ -9,6 +10,7 @@ import { useRouter } from "next/navigation";
  */
 export function CreateProjectForm() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [name, setName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +41,7 @@ export function CreateProjectForm() {
       }
 
       setName("");
+      showToast("Project created");
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");

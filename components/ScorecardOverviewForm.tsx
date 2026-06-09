@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/contexts/ToastContext";
 import { STEPS, TOTAL_STEPS } from "@/lib/steps";
 import { useScorecard } from "@/contexts/ScorecardContext";
 
@@ -20,6 +21,7 @@ type FieldKey = (typeof FIELDS)[number]["key"];
 
 export function ScorecardOverviewForm() {
   const router = useRouter();
+  const { showToast } = useToast();
   const { runId, overview, setOverview } = useScorecard();
 
   const [saving, setSaving] = useState(false);
@@ -77,6 +79,7 @@ export function ScorecardOverviewForm() {
         setSaveError(json?.error?.message ?? "Failed to save the overview.");
         return;
       }
+      showToast("Overview saved");
       router.push(`/scorecard/${runId}/review`);
     } catch {
       setSaveError("Something went wrong. Please try again.");

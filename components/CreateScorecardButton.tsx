@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/contexts/ToastContext";
 
 interface CreateScorecardButtonProps {
   projectId: string;
@@ -10,6 +11,7 @@ interface CreateScorecardButtonProps {
 /** Creates a scorecard run, then navigates into its first step. */
 export function CreateScorecardButton({ projectId }: CreateScorecardButtonProps) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,6 +30,7 @@ export function CreateScorecardButton({ projectId }: CreateScorecardButtonProps)
         setCreating(false);
         return;
       }
+      showToast("Scorecard created");
       router.push(`/scorecard/${json.data.id}/step/1`);
     } catch {
       setError("Something went wrong. Please try again.");

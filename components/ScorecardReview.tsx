@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/contexts/ToastContext";
 import { STEPS, TOTAL_STEPS } from "@/lib/steps";
 import { SCORE_LABELS, scorePercentColor } from "@/lib/score-labels";
 import { useScorecard } from "@/contexts/ScorecardContext";
@@ -19,6 +20,7 @@ const SECTION_WEIGHTS: SectionWeights = new Map(
 
 export function ScorecardReview() {
   const router = useRouter();
+  const { showToast } = useToast();
   const {
     runId,
     questions,
@@ -74,6 +76,7 @@ export function ScorecardReview() {
         setError(json?.error?.message ?? "Failed to submit the evaluation.");
         return;
       }
+      showToast("Evaluation submitted");
       router.push(`/scorecard/${runId}`);
       router.refresh();
     } catch {
