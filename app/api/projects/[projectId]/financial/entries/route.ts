@@ -1,9 +1,50 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { apiOk, apiError } from "@/lib/api";
 import { financialEntryInputSchema } from "@/lib/validation";
 
 interface RouteContext {
   params: Promise<{ projectId: string }>;
+}
+
+const MAX_ORDER_ATTEMPTS = 3;
+
+/**
+ * Create an entry with the next `order` for its project, computing the order
+ * and inserting inside a serializable transaction so concurrent creates can't
+ * produce duplicate orders. A write conflict (P2034) is retried a few times.
+ */
+async function createEntryWithNextOrder(
+  projectId: string,
+  name: string,
+  category: Prisma.FinancialEntryCreateInput["category"],
+) {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= MAX_ORDER_ATTEMPTS; attempt++) {
+    try {
+      return await prisma.$transaction(
+        async (tx) => {
+          const { _max } = await tx.financialEntry.aggregate({
+            where: { projectId },
+            _max: { order: true },
+          });
+          return tx.financialEntry.create({
+            data: { projectId, name, category, order: (_max.order ?? 0) + 1 },
+          });
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      );
+    } catch (error) {
+      lastError = error;
+      const isWriteConflict =
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2034";
+      if (!isWriteConflict) throw error;
+    }
+  }
+
+  throw lastError;
 }
 
 /**
@@ -29,21 +70,11 @@ export async function POST(request: Request, { params }: RouteContext) {
       return apiError("Project not found", 404);
     }
 
-    // Append after the current highest order for this project.
-    const { _max } = await prisma.financialEntry.aggregate({
-      where: { projectId },
-      _max: { order: true },
-    });
-    const order = (_max.order ?? 0) + 1;
-
-    const entry = await prisma.financialEntry.create({
-      data: {
-        projectId,
-        name: parsed.data.name,
-        category: parsed.data.category,
-        order,
-      },
-    });
+    const entry = await createEntryWithNextOrder(
+      projectId,
+      parsed.data.name,
+      parsed.data.category,
+    );
 
     return apiOk(entry, 201);
   } catch (error) {

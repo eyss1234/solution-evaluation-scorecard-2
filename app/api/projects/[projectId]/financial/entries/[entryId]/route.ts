@@ -1,9 +1,18 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { apiOk, apiError } from "@/lib/api";
 import { financialEntryUpdateSchema } from "@/lib/validation";
 
 interface RouteContext {
   params: Promise<{ projectId: string; entryId: string }>;
+}
+
+/** True when a Prisma write failed because the record no longer exists. */
+function isRecordNotFound(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2025"
+  );
 }
 
 /** PATCH /api/projects/[projectId]/financial/entries/[entryId] — update name. */
@@ -34,6 +43,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
     return apiOk(entry);
   } catch (error) {
+    if (isRecordNotFound(error)) {
+      return apiError("Financial entry not found", 404);
+    }
     console.error("PATCH financial entry failed:", error);
     return apiError("Failed to update financial entry", 500);
   }
@@ -59,6 +71,9 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
 
     return apiOk({ id: entryId });
   } catch (error) {
+    if (isRecordNotFound(error)) {
+      return apiError("Financial entry not found", 404);
+    }
     console.error("DELETE financial entry failed:", error);
     return apiError("Failed to delete financial entry", 500);
   }
